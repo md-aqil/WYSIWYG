@@ -1,5 +1,5 @@
 
-(function( $ ){
+(function( $ ) {
 	var editorObj;
 	var methods = {
 		saveSelection: function() {
@@ -109,7 +109,8 @@
 		    }
 		},
 
-		imageWidget: function(){
+		imageWidget: function() {
+			console.log('Image widet', this);
 			//Class for Widget Handling the upload of Files
 			var _idSuffix = this.attr("id");
 			var row = $('<div/>',{
@@ -146,9 +147,11 @@
 						methods.showMessage.apply(this,["imgErrMsg_" + _idSuffix,"Invalid file type"]);
 						continue;
 					}
+
 					var reader = new FileReader();
-					reader.onload = (function(imageFile){
-						return function(e){
+					var that = this;
+					reader.onload = function(imageFile, e) {
+						var imageUploader = function(imageFile, path) {
 							//Render Thumnails
 							var li = $('<li/>',{class:"col-xs-12 col-sm-6 col-md-3 col-lg-3"});
 							var a = $('<a/>',{
@@ -156,14 +159,19 @@
 								class:"thumbnail"
 							});
 							var image = $('<img/>',{
-								src:e.target.result,
+								src:path,
 								title:escape(imageFile.name)
 							}).appendTo(a).click(function(){
 								$('#imageList_' + _idSuffix).data('current', $(this).attr('src'));
 								});
 							li.append(a).appendTo($('#imageList_' + _idSuffix));
+						}.bind(this, imageFile);
+						if(that.options.onImageSelect) {
+							that.options.onImageSelect.call(that, e.target.result, imageUploader)
+						} else {
+							imageUploader(e.target.result)
 						}
-					})(f);
+					}.bind(this, f);
 					reader.readAsDataURL(f);					
 				}				
 			}
@@ -172,7 +180,7 @@
 				class:"inline-form-control",
 				multiple: "multiple"
 			});
-			chooseFromLocal.on('change', handleFileSelect);
+			chooseFromLocal.on('change', handleFileSelect.bind(this));
 			uploadImageBar.append(chooseFromLocal);
 			var imageFromLinkBar = $("<div/>",{
 				id: "imageFromLinkBar_" + _idSuffix,
@@ -347,6 +355,7 @@
 
 		init : function( options )
 		{
+			this.options = options;
 			if ($(this).attr("id") === undefined || $(this).attr("id") === "") {
 				$(this).attr("id", Date.now());
 			}
@@ -1596,15 +1605,9 @@
 
 	}
 
-	$.fn.Editor = function( method ){
-
-		if ( methods[method] ) {
-			return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
-		} else if ( typeof method === 'object' || ! method ) {
-			return methods.init.apply( this, arguments );
-		} else {
-			$.error( 'Method ' +  method + ' does not exist on jQuery.Editor' );
-		}    
+	$.fn.Editor = function( config ) {
+		this.options = config || {};
+		return methods.init.apply( this, arguments );
 	}; 
 
 	

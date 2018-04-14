@@ -30,7 +30,14 @@
 			
 <script>
 			$(document).ready(function() {
-				$("#txtEditor").Editor();
+				$("#txtEditor").Editor({
+					onImageSelect: function(image, cb) {
+						// push image from to server
+						$.post('/send-image',image, function(path) {
+							cb(path);
+						})
+					}
+				});
 				 $('.drop').click(function () {
 				  
 				    $('.drop-menu li').each(function() {
